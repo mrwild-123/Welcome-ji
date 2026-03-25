@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 import gender_guesser.detector as gender_detector
 
-BOT_TOKEN = "8634101836:AAFPr7S3s2hlQo0zjExK7XwpYgiaxIhJgv4"  # ← Yahan apna token daalo
+BOT_TOKEN = "8634101836:AAFPr7S3s2hlQo0zjExK7XwpYgiaxIhJgv4"
 
 DATA_FILE = "welcome_data.json"
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -96,11 +96,9 @@ async def is_admin(update, context):
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 *Welcome Bot Active!*\n\n*Commands:*\n"
-        "`/setwelcome male <msg>`\n`/setwelcome female <msg>`\n`/setwelcome unknown <msg>`\n"
-        "`/setmedia male` — photo/video reply karke\n`/setmedia female`\n"
-        "`/clearmedia male`\n`/preview male`\n`/settings`\n\n"
-        "Variables: `{name}` `{username}` `{first_name}`",
+        "👋 *Welcome Bot Active!*\n\nCommands:\n"
+        "/setwelcome male <msg>\n/setwelcome female <msg>\n/setwelcome unknown <msg>\n"
+        "/setmedia male\n/clearmedia male\n/preview male\n/settings",
         parse_mode="Markdown")
 
 async def cmd_set_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -108,7 +106,7 @@ async def cmd_set_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Sirf admins!"); return
     args = context.args
     if not args or len(args) < 2:
-        await update.message.reply_text("Format: `/setwelcome male Welcome {name}!`", parse_mode="Markdown"); return
+        await update.message.reply_text("Format: /setwelcome male Welcome {name}!"); return
     gender_key = args[0].lower()
     if gender_key not in ("male", "female", "unknown"):
         await update.message.reply_text("❌ male / female / unknown"); return
@@ -116,85 +114,25 @@ async def cmd_set_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     settings = get_group_settings(update.effective_chat.id)
     settings[gender_key]["text"] = msg_text
     update_group_settings(update.effective_chat.id, settings)
-    await update.message.reply_text(f"✅ *{gender_key}* welcome set!\n_{msg_text}_", parse_mode="Markdown")
-
-async def cmd_set_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_admin(update, context):
-        await update.message.reply_text("❌ Sirf admins!"); return
-    args = context.args
-    if not args:
-        await update.message.reply_text("Photo/video ko reply karke `/setmedia male` likhо", parse_mode="Markdown"); return
-    gender_key = args[0].lower()
-    reply = update.message.reply_to_message
-    if not reply:
-        await update.message.reply_text("❌ Pehle media bhejo, phir reply karke command do"); return
-    settings = get_group_settings(update.effective_chat.id)
-    if reply.photo:
-        settings[gender_key].update({"media_type": "photo", "media_id": reply.photo[-1].file_id}); label = "Photo"
-    elif reply.video:
-        settings[gender_key].update({"media_type": "video", "media_id": reply.video.file_id}); label = "Video"
-    elif reply.animation:
-        settings[gender_key].update({"media_type": "gif", "media_id": reply.animation.file_id}); label = "GIF"
-    else:
-        await update.message.reply_text("❌ Sirf Photo, Video, GIF!"); return
-    update_group_settings(update.effective_chat.id, settings)
-    await update.message.reply_text(f"✅ *{gender_key}* ke liye {label} set!", parse_mode="Markdown")
-
-async def cmd_clear_media(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_admin(update, context): return
-    args = context.args
-    if not args:
-        await update.message.reply_text("Usage: `/clearmedia male`", parse_mode="Markdown"); return
-    gender_key = args[0].lower()
-    settings = get_group_settings(update.effective_chat.id)
-    settings[gender_key].update({"media_type": None, "media_id": None})
-    update_group_settings(update.effective_chat.id, settings)
-    await update.message.reply_text(f"✅ {gender_key} media remove!")
-
-async def cmd_preview(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_admin(update, context): return
-    args = context.args
-    gender_key = args[0].lower() if args else "male"
-    settings = get_group_settings(update.effective_chat.id)
-    cfg = settings.get(gender_key, settings["unknown"])
-    user = update.effective_user
-    text = cfg["text"].format(
-        name=user.full_name,
-        username=f"@{user.username}" if user.username else user.full_name,
-        first_name=user.first_name)
-    media_type = cfg.get("media_type")
-    media_id = cfg.get("media_id")
-    await update.message.reply_text(f"👁 *Preview ({gender_key}):*", parse_mode="Markdown")
-    if media_type == "photo" and media_id:
-        await update.message.reply_photo(photo=media_id, caption=text, parse_mode="Markdown")
-    elif media_type == "video" and media_id:
-        await update.message.reply_video(video=media_id, caption=text, parse_mode="Markdown")
-    else:
-        await update.message.reply_text(text, parse_mode="Markdown")
+    await update.message.reply_text(f"✅ {gender_key} welcome set!")
 
 async def cmd_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not await is_admin(update, context): return
     settings = get_group_settings(update.effective_chat.id)
-    msg = "⚙️ *Current Settings:*\n\n"
+    msg = "⚙️ Settings:\n\n"
     for g in ("male", "female", "unknown"):
         cfg = settings[g]
-        emoji = "👨" if g == "male" else ("👩" if g == "female" else "🤷")
-        media = cfg.get("media_type") or "None"
-        msg += f"{emoji} *{g.upper()}*\n📝 `{cfg['text'][:50]}`\n🎬 `{media}`\n\n"
-    await update.message.reply_text(msg, parse_mode="Markdown")
+        msg += f"{g}: {cfg['text']}\n\n"
+    await update.message.reply_text(msg)
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("setwelcome", cmd_set_welcome))
-    app.add_handler(CommandHandler("setmedia", cmd_set_media))
-    app.add_handler(CommandHandler("clearmedia", cmd_clear_media))
-    app.add_handler(CommandHandler("preview", cmd_preview))
     app.add_handler(CommandHandler("settings", cmd_settings))
     app.add_handler(ChatMemberHandler(member_joined, ChatMemberHandler.CHAT_MEMBER))
     app.add_handler(ChatJoinRequestHandler(join_request_approved))
     logger.info("Bot chal raha hai...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
