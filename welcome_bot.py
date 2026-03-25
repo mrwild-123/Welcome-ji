@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 import gender_guesser.detector as gender_detector
 
-BOT_TOKEN = "YOUR_TOKEN_HERE"  # ← Yahan apna token daalo
+BOT_TOKEN = "8634101836:AAFPr7S3s2hlQo0zjExK7XwpYgiaxIhJgv4"  # ← Yahan apna token daalo
 
 DATA_FILE = "welcome_data.json"
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
