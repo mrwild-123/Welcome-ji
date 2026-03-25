@@ -1,2 +1,1 @@
-python-telegram-bot==20.7
-gender-guesser==0.4.0
+worker: python welcome_bot.py
